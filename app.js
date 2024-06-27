@@ -24,7 +24,8 @@ db.once('open', () => {
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  exp: { type: Number, default: 0 }
+  exp: { type: Number, default: 0 },
+impactPoints: { type: Number, default: 0 }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -163,6 +164,40 @@ app.get('/users-by-exp', authenticateToken, async (req, res) => {
     res.status(500).send('Error fetching users');
   }
 });
+
+app.post('/add-impact-points', authenticateToken, async (req, res) => {
+  const { points } = req.body;
+  const userId = req.user.userId;
+  
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send('User not found');
+    }
+
+    user.impactPoints += points;
+    await user.save();
+    res.status(200).send('Impact points added');
+  } catch (error) {
+    res.status(500).send('Error adding impact points');
+  }
+});
+
+app.get('/get-impact-points', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send('User not found');
+    }
+
+    res.status(200).json({ impactPoints: user.impactPoints });
+  } catch (error) {
+    res.status(500).send('Error fetching impact points');
+  }
+});
+
 
 
 app.listen(port, () => {
