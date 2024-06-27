@@ -86,6 +86,31 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+app.post('/change-username', authenticateToken, async (req, res) => {
+  const { newUsername } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    // Vérifiez si le nouveau nom d'utilisateur est déjà pris
+    const existingUser = await User.findOne({ username: newUsername });
+    if (existingUser) {
+      return res.status(400).send('Username already taken');
+    }
+
+    // Trouvez l'utilisateur par ID et mettez à jour le nom d'utilisateur
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).send('User not found');
+    }
+
+    user.username = newUsername;
+    await user.save();
+    res.status(200).send('Username updated');
+  } catch (error) {
+    res.status(500).send('Error updating username');
+  }
+});
+
 
 // Route pour attribuer de l'expérience à un compte
 app.post('/add-exp', authenticateToken, async (req, res) => {
@@ -127,6 +152,15 @@ app.get('/get-all-exp', authenticateToken, async (req, res) => {
     res.status(200).json(users);
   } catch (error) {
     res.status(500).send('Error fetching users experience');
+  }
+});
+
+app.get('/users-by-exp', authenticateToken, async (req, res) => {
+  try {
+    const users = await User.find().sort({ exp: -1 });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).send('Error fetching users');
   }
 });
 
